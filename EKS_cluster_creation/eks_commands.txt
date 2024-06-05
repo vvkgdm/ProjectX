@@ -1,0 +1,44 @@
+To create the cluster
+eksctl create cluster --name=eksdemo1 --region=us-east-1 --zones=us-east-1a,us-east-1b --without-nodegroup 
+
+# Create Public Node Group   
+eksctl create nodegroup --cluster=eksdemo1 --region=us-east-1 --name=eksdemo1-ng-public1 --node-type=t3.medium --nodes=2 --nodes-min=2 --nodes-max=4 --node-volume-size=20 --ssh-access --ssh-public-key=kube-demo --managed --asg-access --external-dns-access --full-ecr-access --appmesh-access --alb-ingress-access 
+# To Create Private subnet Node Group   
+eksctl create nodegroup --cluster=eksdemo1 --region=us-east-1 --name=eksdemo1-ng --node-type=t3.medium --nodes=2 --nodes-min=2 --nodes-max=4 --node-volume-size=20 --ssh-access --ssh-public-key=kube-demo --managed --asg-access --external-dns-access --full-ecr-access --appmesh-access --alb-ingress-access  --node-private-networking 
+Only differnec is this --node-private-networking 
+
+To give IAM eks access to cluster
+eksctl utils associate-iam-oidc-provider --region us-east-1 --cluster eksdemo1 --approve
+To  create a policy and creating a service account so that we can use aws resources using k8s 
+eksctl create iamserviceaccount --region us-east-1 --name ebs-csi-controller-sa --namespace kube-system --cluster eksdemo1 --attach-policy-arn arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy --approve --role-only --role-name AmazonEKS_EBS_CSI_DriverRole
+
+eksctl create addon --name aws-ebs-csi-driver --cluster eksdemo1 --service-account-role-arn arn:aws:iam::$(aws sts get-caller-identity --query Account --output text):role/AmazonEKS_EBS_CSI_DriverRole --force
+    
+To set the chmod 400 for pem in windows
+$path = ".\kube-demo.pem"
+icacls.exe $path /reset
+icacls.exe $path /GRANT:R "$($env:USERNAME):(R)"
+icacls.exe $path /inheritance:r
+
+
+ssh -i .\kube-demo.pem 3.95.152.97
+ssh -i .\kube-demo.pem ec2-user@3.95.152.97
+
+Deleting cluster
+CD
+
+# List EKS Clusters
+eksctl get clusters
+
+# Capture Node Group name
+eksctl get nodegroup --cluster=<clusterName>
+eksctl get nodegroup --cluster=eksdemo1
+
+# Delete Node Group
+eksctl delete nodegroup --cluster=<clusterName> --name=<nodegroupName>
+eksctl delete nodegroup --cluster=eksdemo1 --name=eksdemo1-ng-public1
+
+
+# Delete Cluster
+eksctl delete cluster <clusterName>
+eksctl delete cluster eksdemo1
