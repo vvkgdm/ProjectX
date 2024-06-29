@@ -1,0 +1,88 @@
+Steps to Create a Bearer Token with Admin Role
+
+Create a service account in the kube-system namespace (or any preferred namespace).
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: argocd-admin
+  namespace: kube-system
+Save this YAML to a file (e.g., service-account.yaml) and apply it:
+
+kubectl apply -f service-account.yaml
+Bind the Service Account to the Admin Role:
+
+Bind the service account to the cluster-admin role using a ClusterRoleBinding.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: argocd-admin-binding
+subjects:
+- kind: ServiceAccount
+  name: argocd-admin
+  namespace: kube-system
+roleRef:
+  kind: ClusterRole
+  name: cluster-admin
+  apiGroup: rbac.authorization.k8s.io
+Save this YAML to a file (e.g., cluster-role-binding.yaml) and apply it:
+
+kubectl apply -f cluster-role-binding.yaml
+Generate the Bearer Token:
+
+Generate the bearer token for the service account. This involves extracting the token from the service account’s secret.
+# Get the name of the secret associated with the service account
+SECRET_NAME=$(kubectl get sa argocd-admin -n kube-system -o jsonpath="{.secrets[0].name}")
+
+# Get the token from the secret
+BEARER_TOKEN=$(kubectl get secret $SECRET_NAME -n kube-system -o jsonpath="{.data.token}" | base64 --decode)
+
+# Print the token
+echo $BEARER_TOKEN
+Using the Bearer Token in Argo CD
+Create a Kubernetes Secret in the Argo CD Namespace:
+
+Store the bearer token in a Kubernetes secret in the Argo CD namespace.
+kubectl create secret generic my-prod-cluster-secret  --from-literal=token=$BEARER_TOKEN -n argocd
+Configure Argo CD to Use the Secret:
+
+Update the Argo CD argocd-cm ConfigMap to include the new cluster using the secret.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-cm
+  namespace: argocd
+data:
+  clusters: |
+    - name: my-prod-cluster
+      server: https://<production-cluster-api-server>
+      config:
+        bearerToken: $BEARER_TOKEN
+        tlsClientConfig:
+          insecure: false
+          caData: <base64-encoded-ca-cert>
+Alternatively, using the kubeconfig secret:
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-cm
+  namespace: argocd
+data:
+  clusters: |
+    - name: my-prod-cluster
+      server: https://<production-cluster-api-server>
+      config:
+        bearerToken: <bearer-token-from-secret>
+        tlsClientConfig:
+          insecure: false
+          caData: <base64-encoded-ca-cert>
+Summary
+Service Account Creation: Create a service account with the required name and namespace.
+Role Binding: Bind the service account to the cluster-admin role.
+Token Generation: Extract the bearer token from the associated secret.
+Argo CD Configuration: Store the token in a Kubernetes secret and configure Argo CD to use this secret for accessing the cluster.
+
+Extract caData from the Kubeconfig:
+Open the kubeconfig file located at ~/.kube/config
+
+
+

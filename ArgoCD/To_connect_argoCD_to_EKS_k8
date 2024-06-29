@@ -1,0 +1,75 @@
+Steps to Create a Bearer Token with Admin Role
+
+Create a service account in the kube-system namespace (or any preferred namespace).
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: argocd-admin
+  namespace: kube-system
+
+kubectl apply -f service-account.yaml
+
+Bind the Service Account to the Admin Role:
+Bind the service account to the cluster-admin role using a ClusterRoleBinding.
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: argocd-admin-binding
+subjects:
+- kind: ServiceAccount
+  name: argocd-admin
+  namespace: kube-system
+roleRef:
+  kind: ClusterRole
+  name: cluster-admin
+  apiGroup: rbac.authorization.k8s.io
+
+kubectl apply -f cluster-role-binding.yaml
+
+Generate the bearer token for the service account. This involves extracting the token from the service account’s secret.
+# Get the name of the secret associated with the service account
+SECRET_NAME=$(kubectl get sa argocd-admin -n kube-system -o jsonpath="{.secrets[0].name}")
+
+# Get the token from the secret
+BEARER_TOKEN=$(kubectl get secret $SECRET_NAME -n kube-system -o jsonpath="{.data.token}" | base64 --decode)
+
+If secret is not created automaticaly it was because of the k8s version
+create a secret and associate it with the service account:
+apiVersion: v1
+kind: Secret
+metadata:
+  name: argocd-admin-token
+  namespace: kube-system
+  annotations:
+    kubernetes.io/service-account.name: "argocd-admin"
+type: kubernetes.io/service-account-token
+
+Then kubectl get secret $SECRET_NAME -n kube-system -o jsonpath="{.data.token}" --> decode that token and
+# Print the token
+Using the Bearer Token in Argo CD
+Create a Kubernetes Secret in the Argo CD Namespace:
+
+Using the kubeconfig secret:
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-cm
+  namespace: argocd
+data:
+  clusters: |
+    - name: my-prod-cluster
+      server: https://<production-cluster-api-server>
+      config:
+        bearerToken: <bearer-token-from-secret>
+        tlsClientConfig:
+          insecure: false
+          caData: <base64-encoded-ca-cert>
+i
+
+Extract caData from the Kubeconfig:
+Open the kubeconfig file located at ~/.kube/config
+bearerToken is which we create secret in main k8 cluster
+Url is k8s api url
+
+
