@@ -1,7 +1,8 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: helm-charts-prod
+  name: app-in-prod
+  namespace: prod
 spec:
   generators:
     - list:

@@ -1,8 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: app-in-dit
-  namespace: dit
+  name: helm-charts-prod
 spec:
   generators:
     - list:
@@ -33,7 +32,7 @@ spec:
             path: shippingservice
   template:
     metadata:
-      name: '{{name}}-dit'
+      name: '{{name}}-prod'
     spec:
       project: default
       source:
@@ -42,11 +41,8 @@ spec:
         path: '{{path}}'
         helm:
           valueFiles:
-            - values-dit.yaml
+            - values-prod.yaml
       destination:
         server: https://kubernetes.default.svc
-        namespace: dit
-      syncPolicy:
-        automated:
-          prune: true
-          selfHeal: true
+        namespace: prod
+      syncPolicy: {}  # Automated sync is not configured for PROD

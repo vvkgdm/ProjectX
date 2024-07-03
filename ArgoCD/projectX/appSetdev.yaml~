@@ -1,8 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: app-in-dit
-  namespace: dit
+  name: helm-charts-dit
 spec:
   generators:
     - list:
