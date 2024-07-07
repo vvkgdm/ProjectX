@@ -54,7 +54,7 @@ pipeline {
                                 withSonarQubeEnv('SonarQube') {
                                     sh "${SONAR_SCANNER} -Dsonar.projectKey=${env.JOB_NAME}-${service} -Dsonar.sources=."
                                 }
-                                sh 'trivy fs .'
+                                sh "trivy fs --format table -o trivy-fs-report.html ."
                             }
                         }
                     }
