@@ -10,9 +10,10 @@ pipeline {
         NEXUS_URL = 'http://54.89.16.64:8081/'
         SONAR_URL = 'http://54.89.16.64:9000/'
         ////DATE_TAG = "${new Date().format('yyyyMMddHHmmss')}"
-        //DATE_TAG = "${new Date().format('yyMMdd-HHmmss')}"
-        DATE_TAG = 'latest'
+        DATE_TAG = "${new Date().format('yyMMdd-HHmmss')}"
+        ///DATE_TAG = 'latest'
         GIT_CREDS = credentials('githubID')
+        
         SCANNER_HOME = tool 'sonar-scanner'
     }
 
@@ -105,8 +106,13 @@ pipeline {
                             sh 'ls -la'
                             if (fileExists('Dockerfile')) {
                                 echo "Building and pushing Docker image for ${service}"
-                                sh "docker build -t ${NEXUS_REPO}/${service}:${DATE_TAG} ."
-                                sh "docker push ${NEXUS_REPO}/${service}:${DATE_TAG}"
+                             withCredentials([usernamePassword(credentialsId: 'docker-credentials', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
+                                    sh "docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}"
+                                    sh "docker build -t ${NEXUS_REPO}/${service}:${DATE_TAG} ."
+                                    sh "docker push ${NEXUS_REPO}/${service}:${DATE_TAG}"
+                                }
+
+                                
                             } else {
                                 echo "No Dockerfile found in ${service}, skipping."
                             }
