@@ -98,4 +98,73 @@ pipeline {
                     def services = env.CHANGED_SERVICES.split(',')
                     services.each { service ->
                         echo "Processing service: ${service}"
-          
+                        dir("ProjectX/SourceCode/${service}") {
+                            echo "Current directory: ${pwd()}"
+                            sh 'ls -la'
+                            if (fileExists('Dockerfile')) {
+                                echo "Building and pushing Docker image for ${service}"
+                                sh "docker build -t ${NEXUS_REPO}/${service}:${DATE_TAG} ."
+                                sh "docker push ${NEXUS_REPO}/${service}:${DATE_TAG}"
+                            } else {
+                                echo "No Dockerfile found in ${service}, skipping."
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Update Helm Values') {
+            when {
+                expression { env.CHANGED_SERVICES != null && env.CHANGED_SERVICES != '' }
+            }
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'githubID', usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_PASSWORD')]) {
+                    script {
+                        def services = env.CHANGED_SERVICES.split(',')
+                        services.each { service ->
+                            dir("ProjectX/SourceCode/${service}") {
+                                sh """
+                                    git clone https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/${GITHUB_HELM_REPO}.git
+                                    cd ${GITHUB_HELM_REPO}
+                                    sed -i 's/tag:.*/tag: ${DATE_TAG}/g' values-${BRANCH_NAME}.yaml
+                                    git commit -am 'Update image tag to ${DATE_TAG}'
+                                    git push
+                                """
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            cleanWs()
+        }
+    }
+}
+
+def getDockerImageForService(service) {
+    switch (service) {
+        case 'frontend':
+        case 'productcatalogservice':
+        case 'shippingservice':
+        case 'checkoutservice':
+            return 'golang:1.16'
+        case 'cartservice':
+            return 'mcr.microsoft.com/dotnet/sdk:5.0'
+        case 'currencyservice':
+        case 'paymentservice':
+            return 'node:14'
+        case 'emailservice':
+        case 'recommendationservice':
+        case 'loadgenerator':
+            return 'python:3.8'
+        case 'adservice':
+            return 'openjdk:11'
+        default:
+            return 'alpine'
+    }
+}
