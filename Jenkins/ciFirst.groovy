@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         GITHUB_REPO = 'vvkgdm/ProjectX'
-        BRANCH_NAME = 'dit'
+        BRANCH_NAME = 'development'
         NEXUS_REPO = 'http://54.92.241.126:8081/repository/docker-repo'
         NEXUS_URL = 'http://54.92.241.126:8081/'
         SONAR_URL = 'http://54.92.241.126:9000/'
@@ -16,24 +16,19 @@ pipeline {
         stage('Checkout') {
             steps {
                 git url: "https://github.com/${GITHUB_REPO}", branch: "${BRANCH_NAME}", credentialsId: "${GIT_CREDS}"
-                script {
-                    env.WORKSPACE = "${WORKSPACE}/SourceCode"
-                }
             }
         }
 
         stage('Identify Changed Services') {
             steps {
-                dir(env.WORKSPACE) {
-                    script {
-                        def changedFiles = sh(script: 'git diff-tree --no-commit-id --name-only -r HEAD', returnStdout: true).trim().split('\n')
-                        def services = ['frontend', 'cartservice', 'productcatalogservice', 'currencyservice', 'paymentservice', 'shippingservice', 'emailservice', 'checkoutservice', 'recommendationservice', 'adservice', 'loadgenerator', 'shoppingassistantservice']
-                        env.CHANGED_SERVICES = services.findAll { service -> 
-                            changedFiles.any { it.contains("SourceCode/${service}") }
-                        }.join(',')
-                        if (env.CHANGED_SERVICES.isEmpty()) {
-                            error("No relevant services changed.")
-                        }
+                script {
+                    def changedFiles = sh(script: 'git diff-tree --no-commit-id --name-only -r HEAD', returnStdout: true).trim().split('\n')
+                    def services = ['frontend', 'cartservice', 'productcatalogservice', 'currencyservice', 'paymentservice', 'shippingservice', 'emailservice', 'checkoutservice', 'recommendationservice', 'adservice', 'loadgenerator', 'shoppingassistantservice']
+                    env.CHANGED_SERVICES = services.findAll { service -> 
+                        changedFiles.any { it.contains(service) }
+                    }.join(',')
+                    if (env.CHANGED_SERVICES.isEmpty()) {
+                        error("No relevant services changed.")
                     }
                 }
             }
@@ -47,8 +42,10 @@ pipeline {
                 script {
                     def services = env.CHANGED_SERVICES.split(',')
                     services.each { service ->
-                        dir("${env.WORKSPACE}/${service}") {
-                            sh 'trivy fs --format table -o trivy-fs-report.html .'
+                        docker.image('aquasec/trivy:latest').inside {
+                            dir(service) {
+                                sh 'trivy fs --format table -o trivy-fs-report.html .'
+                            }
                         }
                     }
                 }
@@ -63,7 +60,7 @@ pipeline {
                 script {
                     def services = env.CHANGED_SERVICES.split(',')
                     services.each { service ->
-                        dir("${env.WORKSPACE}/${service}") {
+                        dir(service) {
                             withSonarQubeEnv('sonar') {
                                 sh """
                                     ${SCANNER_HOME}/bin/sonar-scanner \
@@ -86,7 +83,7 @@ pipeline {
                 script {
                     def services = env.CHANGED_SERVICES.split(',')
                     services.each { service ->
-                        dir("${env.WORKSPACE}/${service}") {
+                        dir(service) {
                             if (fileExists('Dockerfile')) {
                                 sh "docker build -t ${NEXUS_REPO}/${service}:${DATE_TAG} ."
                                 sh "docker push ${NEXUS_REPO}/${service}:${DATE_TAG}"
@@ -121,13 +118,11 @@ pipeline {
                     script {
                         def services = env.CHANGED_SERVICES.split(',')
                         services.each { service ->
-                            dir("${env.WORKSPACE}/${service}") {
+                            dir(service) {
                                 sh """
                                     git clone https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/${GITHUB_REPO}.git
                                     cd ${GITHUB_REPO}
                                     sed -i 's/tag:.*/tag: ${DATE_TAG}/g' values-${BRANCH_NAME}.yaml
-                                    git config user.email "jenkins@example.com"
-                                    git config user.name "Jenkins"
                                     git commit -am 'Update image tag to ${DATE_TAG}'
                                     git push
                                 """
@@ -143,5 +138,28 @@ pipeline {
         always {
             cleanWs()
         }
+    }
+}
+
+def getDockerImageForService(service) {
+    switch (service) {
+        case 'frontend':
+        case 'productcatalogservice':
+        case 'shippingservice':
+        case 'checkoutservice':
+            return 'golang:1.16'
+        case 'cartservice':
+            return 'mcr.microsoft.com/dotnet/sdk:5.0'
+        case 'currencyservice':
+        case 'paymentservice':
+            return 'node:14'
+        case 'emailservice':
+        case 'recommendationservice':
+        case 'loadgenerator':
+            return 'python:3.8'
+        case 'adservice':
+            return 'openjdk:11'
+        default:
+            return 'alpine'
     }
 }
