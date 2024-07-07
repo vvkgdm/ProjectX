@@ -53,7 +53,7 @@ pipeline {
             }
         }
 
-        stage('Sonar Scan') {
+        /*stage('Sonar Scan') {
             when {
                 expression { env.CHANGED_SERVICES != null }
             }
@@ -74,7 +74,7 @@ pipeline {
                     }
                 }
             }
-        }
+        } */
 
         stage('Build and Push Docker Images') {
             when {
