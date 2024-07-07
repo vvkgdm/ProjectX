@@ -4,8 +4,9 @@ pipeline {
     environment {
         GITHUB_REPO = 'vvkgdm/ProjectX'
         BRANCH_NAME = 'development'
-        NEXUS_REPO = 'your-nexus-repo'
-        NEXUS_URL = 'your-nexus-url'
+        NEXUS_REPO = 'http://54.92.241.126:8081/repository/docker-repo'
+        NEXUS_URL = 'http://54.92.241.126:8081/'
+        SONAR_URL = 'http://54.92.241.126:9000/'
         DATE_TAG = "${new Date().format('yyyyMMddHHmmss')}"
         DOCKER_CREDS = credentials('docker-credentials-id')
         GIT_CREDS = credentials('git-credentials-id')
@@ -72,7 +73,10 @@ pipeline {
                             dir(service) {
                                 withSonarQubeEnv('sonar') {
                                     sh """
-                                        ${SCANNER_HOME}/bin/sonar-scanner -Dsonar.projectKey=${service} -Dsonar.projectName=${service}
+                                        ${SCANNER_HOME}/bin/sonar-scanner \
+                                        -Dsonar.host.url=${SONAR_URL} \
+                                        -Dsonar.projectKey=${service} \
+                                        -Dsonar.projectName=${service}
                                     """
                                 }
                             }
