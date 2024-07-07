@@ -89,6 +89,8 @@ stage('Build and Push Docker Images') {
                 services.each { service ->
                     echo "Processing service: ${service}"
                     dir(service) {
+                        echo "Current directory: ${pwd()}"
+                        sh 'ls -la'
                         if (fileExists('Dockerfile')) {
                             echo "Building and pushing Docker image for ${service}"
                             sh "docker build -t ${NEXUS_REPO}/${service}:${DATE_TAG} ."
