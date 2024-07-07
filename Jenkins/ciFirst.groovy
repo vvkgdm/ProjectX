@@ -8,7 +8,7 @@ pipeline {
         NEXUS_URL = 'http://54.92.241.126:8081/'
         SONAR_URL = 'http://54.92.241.126:9000/'
         DATE_TAG = "${new Date().format('yyyyMMddHHmmss')}"
-        DOCKER_CREDS = credentials('docker-credentials-id')
+        //DOCKER_CREDS = credentials('docker-credentials-id')
         GIT_CREDS = credentials('githubID')
         SCANNER_HOME = tool 'sonar-scanner'
     }
@@ -113,7 +113,7 @@ pipeline {
                 expression { env.CHANGED_SERVICES != null }
             }
             steps {
-                withCredentials([usernamePassword(credentialsId: 'helm-git-credentials-id', usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_PASSWORD')]) {
+                withCredentials([usernamePassword(credentialsId: 'githubID', usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_PASSWORD')]) {
                     script {
                         def services = env.CHANGED_SERVICES.split(',')
                         services.each { service ->
