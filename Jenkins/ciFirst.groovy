@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         GITHUB_REPO = 'vvkgdm/ProjectX'
-        BRANCH_NAME = 'development'
+        BRANCH_NAME = 'dit'
         NEXUS_REPO = 'http://54.92.241.126:8081/repository/docker-repo'
         NEXUS_URL = 'http://54.92.241.126:8081/'
         SONAR_URL = 'http://54.92.241.126:9000/'
