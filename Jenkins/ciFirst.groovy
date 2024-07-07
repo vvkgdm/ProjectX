@@ -1,5 +1,10 @@
 pipeline {
-    agent none
+     agent {
+        docker {
+            image 'docker:dind'
+            args '--privileged'
+        }
+    }
 
     environment {
         GITHUB_REPO = 'vvkgdm/ProjectX'
