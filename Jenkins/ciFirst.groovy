@@ -1,5 +1,5 @@
 pipeline {
-    agent any
+    agent none
 
     environment {
         GITHUB_REPO = 'vvkgdm/ProjectX'
@@ -14,12 +14,18 @@ pipeline {
 
     stages {
         stage('Checkout') {
+            agent {
+                docker { image 'alpine/git' }
+            }
             steps {
                 git url: "https://github.com/${GITHUB_REPO}", branch: "${BRANCH_NAME}", credentialsId: "${GIT_CREDS}"
             }
         }
 
         stage('Identify Changed Services') {
+            agent {
+                docker { image 'alpine' }
+            }
             steps {
                 script {
                     def changedFiles = sh(script: 'git diff-tree --no-commit-id --name-only -r HEAD', returnStdout: true).trim().split('\n')
@@ -42,11 +48,14 @@ pipeline {
                 script {
                     def services = env.CHANGED_SERVICES.split(',')
                     services.each { service ->
-                        dir(service) {
-                            withSonarQubeEnv('SonarQube') {
-                                sh "${SONAR_SCANNER} -Dsonar.projectKey=${env.JOB_NAME}-${service} -Dsonar.sources=."
+                        def dockerImage = getDockerImageForService(service)
+                        docker.image(dockerImage).inside {
+                            dir(service) {
+                                withSonarQubeEnv('SonarQube') {
+                                    sh "${SONAR_SCANNER} -Dsonar.projectKey=${env.JOB_NAME}-${service} -Dsonar.sources=."
+                                }
+                                sh 'trivy fs .'
                             }
-                            sh 'trivy fs .'
                         }
                     }
                 }
@@ -61,9 +70,12 @@ pipeline {
                 script {
                     def services = env.CHANGED_SERVICES.split(',')
                     services.each { service ->
-                        dir(service) {
-                            if (fileExists('Dockerfile')) {
-                                docker.build("${NEXUS_REPO}/${service}:${DATE_TAG}").push()
+                        def dockerImage = getDockerImageForService(service)
+                        docker.image(dockerImage).inside {
+                            dir(service) {
+                                if (fileExists('Dockerfile')) {
+                                    docker.build("${NEXUS_REPO}/${service}:${DATE_TAG}").push()
+                                }
                             }
                         }
                     }
@@ -115,6 +127,29 @@ pipeline {
         always {
             cleanWs()
         }
+    }
+}
+
+def getDockerImageForService(service) {
+    switch (service) {
+        case 'frontend':
+        case 'productcatalogservice':
+        case 'shippingservice':
+        case 'checkoutservice':
+            return 'golang:1.16'
+        case 'cartservice':
+            return 'mcr.microsoft.com/dotnet/sdk:5.0'
+        case 'currencyservice':
+        case 'paymentservice':
+            return 'node:14'
+        case 'emailservice':
+        case 'recommendationservice':
+        case 'loadgenerator':
+            return 'python:3.8'
+        case 'adservice':
+            return 'openjdk:11'
+        default:
+            return 'alpine'
     }
 }
 
