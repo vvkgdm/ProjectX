@@ -77,25 +77,31 @@ pipeline {
             }
         }
 
-        stage('Build and Push Docker Images') {
-            when {
-                expression { env.CHANGED_SERVICES != null }
-            }
-            steps {
-                script {
-                    def services = env.CHANGED_SERVICES.split(',')
-                    services.each { service ->
-                        dir(service) {
-                            if (fileExists('Dockerfile')) {
-                                sh "docker build -t ${NEXUS_REPO}/${service}:${DATE_TAG} ."
-                                sh "docker push ${NEXUS_REPO}/${service}:${DATE_TAG}"
-                            }
+stage('Build and Push Docker Images') {
+    when {
+        expression { env.CHANGED_SERVICES != null }
+    }
+    steps {
+        script {
+            def services = env.CHANGED_SERVICES.split(',')
+            dir('ProjectX/SourceCode') {
+                services.each { service ->
+                    dir(service) {
+                        if (fileExists('Dockerfile')) {
+                            echo "Building and pushing Docker image for ${service}"
+                            sh "docker build -t ${NEXUS_REPO}/${service}:${DATE_TAG} ."
+                            sh "docker push ${NEXUS_REPO}/${service}:${DATE_TAG}"
+                        } else {
+                            echo "No Dockerfile found in ${service}, skipping."
                         }
                     }
                 }
             }
         }
+    }
+}
 
+        
         /*stage('Inline Scanning') {
             when {
                 expression { env.CHANGED_SERVICES != null }
