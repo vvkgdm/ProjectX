@@ -125,7 +125,7 @@ pipeline {
 
     post {
         always {
-            node('master') { // Replace 'master' with the label of your Jenkins master node or another suitable agent
+            node { // Removed label to allow any available node
                 cleanWs()
             }
         }
