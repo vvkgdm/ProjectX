@@ -6,7 +6,7 @@ pipeline {
         GITHUB_HELM_REPO = 'vvkgdm/ProjectXHelm'
         BRANCH_NAME = 'dit'
         HELM_BRANCH_NAME = 'main'
-        NEXUS_REPO = 'http://54.92.241.126:8081/repository/docker-repo'
+        NEXUS_REPO = 'http://54.92.241.126:8081/repository/docker-private'
         NEXUS_URL = 'http://54.92.241.126:8081/'
         SONAR_URL = 'http://54.92.241.126:9000/'
         DATE_TAG = "${new Date().format('yyyyMMddHHmmss')}"
