@@ -36,7 +36,7 @@ pipeline {
             }
         }
 
-        stage('Trivy Scan') {
+           stage('Trivy Scan') {
             when {
                 expression { env.CHANGED_SERVICES != null }
             }
@@ -44,10 +44,10 @@ pipeline {
                 script {
                     def services = env.CHANGED_SERVICES.split(',')
                     services.each { service ->
-                        docker.image('aquasec/trivy:latest').inside {
-                            dir(service) {
-                                sh 'trivy fs --format table -o trivy-fs-report.html .'
-                            }
+                        dir(service) {
+                            sh """
+                                docker run --rm -v $(pwd):/workspace -w /workspace aquasec/trivy:latest fs --format table -o trivy-fs-report.html .
+                            """
                         }
                     }
                 }
