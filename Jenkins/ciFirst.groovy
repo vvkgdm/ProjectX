@@ -135,6 +135,8 @@ pipeline {
                                 sh """
                                     git clone https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/vvkgdm/${GITHUB_HELM_REPO}.git
                                     cd ${GITHUB_HELM_REPO}
+                                    pwd
+                                    ls
                                     sed -i 's/tag:.*/tag: ${DATE_TAG}/g' values-${BRANCH_NAME}.yaml
                                     git commit -am 'Update image tag to ${DATE_TAG}'
                                     git push
