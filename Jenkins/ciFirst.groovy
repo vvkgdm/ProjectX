@@ -56,10 +56,10 @@ pipeline {
                 expression { env.CHANGED_SERVICES != null }
             }
             steps {
-                script {
-                    
-                                sh "trivy fs --format table -o trivy-fs-report.html ."
-                            }
+                withSonarQubeEnv('sonar') {
+    sh ''' $SCANNER_HOME/bin/sonar-scanner -Dsonar.projectKey=$service -Dsonar.projectName=$service '''
+    
+}
                         }
                     }
 
