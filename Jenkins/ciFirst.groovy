@@ -10,6 +10,7 @@ pipeline {
         NEXUS_URL = 'http://54.89.16.64:8081/'
         SONAR_URL = 'http://54.89.16.64:9000/'
         ////DATE_TAG = "${new Date().format('yyyyMMddHHmmss')}"
+        //DATE_TAG = "${new Date().format('yyMMdd-HHmmss')}"
         DATE_TAG = "${new Date().format('yyMMdd-HHmmss')}"
         GIT_CREDS = credentials('githubID')
         SCANNER_HOME = tool 'sonar-scanner'
