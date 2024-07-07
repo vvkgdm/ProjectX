@@ -84,7 +84,7 @@ stage('Build and Push Docker Images') {
     steps {
         script {
             def services = env.CHANGED_SERVICES.split(',')
-            dir('ProjectX/SourceCode/service') {
+            dir('ProjectX/SourceCode') {
                 services.each { service ->
                     dir(service) {
                         if (fileExists('Dockerfile')) {
