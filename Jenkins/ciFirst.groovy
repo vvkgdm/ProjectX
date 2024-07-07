@@ -149,7 +149,7 @@ pipeline {
 
     post {
         always {
-             node('any') {  // This allocates a node for this specific step
+             docker { image 'alpine' }
             cleanWs()
         } 
          
