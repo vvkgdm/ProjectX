@@ -125,7 +125,9 @@ pipeline {
 
     post {
         always {
-            cleanWs()
+            node {
+                cleanWs()
+            }
         }
     }
 }
@@ -152,4 +154,3 @@ def getDockerImageForService(service) {
             return 'alpine'
     }
 }
-
