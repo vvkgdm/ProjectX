@@ -83,9 +83,11 @@ stage('Build and Push Docker Images') {
     }
     steps {
         script {
+            echo "CHANGED_SERVICES: ${env.CHANGED_SERVICES}"
             def services = env.CHANGED_SERVICES.split(',')
             dir('ProjectX/SourceCode') {
                 services.each { service ->
+                    echo "Processing service: ${service}"
                     dir(service) {
                         if (fileExists('Dockerfile')) {
                             echo "Building and pushing Docker image for ${service}"
@@ -101,6 +103,10 @@ stage('Build and Push Docker Images') {
     }
 }
 
+
+        
+
+        
         
         /*stage('Inline Scanning') {
             when {
