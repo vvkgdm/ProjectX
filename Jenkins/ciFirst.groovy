@@ -96,7 +96,7 @@ pipeline {
             }
         }
 
-        stage('Inline Scanning') {
+        /*stage('Inline Scanning') {
             when {
                 expression { env.CHANGED_SERVICES != null }
             }
@@ -109,7 +109,7 @@ pipeline {
                     }
                 }
             }
-        }
+        } */
 
         stage('Update Helm Values') {
             when {
