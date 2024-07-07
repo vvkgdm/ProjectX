@@ -149,7 +149,10 @@ pipeline {
 
     post {
         always {
-               cleanWs()
+             node('any') {  // This allocates a node for this specific step
+            cleanWs()
+        } 
+         
             }
         }
     }
