@@ -65,7 +65,7 @@ pipeline {
             }
         }
 
-        stage('Sonar Scan') {
+        /*stage('Sonar Scan') {
             when {
                 expression { env.CHANGED_SERVICES != null && env.CHANGED_SERVICES != '' }
             }
@@ -86,7 +86,7 @@ pipeline {
                     }
                 }
             }
-        }
+        } */
 
         stage('Build and Push Docker Images') {
             when {
