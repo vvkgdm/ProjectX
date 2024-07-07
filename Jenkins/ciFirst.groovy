@@ -133,7 +133,7 @@ pipeline {
                         services.each { service ->
                             dir("ProjectX/SourceCode/${service}") {
                                 sh """
-                                    git clone https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/${GITHUB_HELM_REPO}.git
+                                    git clone https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/vvkgdm/${GITHUB_HELM_REPO}.git
                                     cd ${GITHUB_HELM_REPO}
                                     sed -i 's/tag:.*/tag: ${DATE_TAG}/g' values-${BRANCH_NAME}.yaml
                                     git commit -am 'Update image tag to ${DATE_TAG}'
