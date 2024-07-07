@@ -149,7 +149,8 @@ pipeline {
 
     post {
         always {
-             docker { image 'alpine' }
+            agent { 
+            docker { image 'alpine' }
             cleanWs()
         } 
          
