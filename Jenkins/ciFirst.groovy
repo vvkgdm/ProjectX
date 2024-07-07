@@ -153,7 +153,6 @@ pipeline {
             }
         }
     }
-}
 
 def getDockerImageForService(service) {
     switch (service) {
