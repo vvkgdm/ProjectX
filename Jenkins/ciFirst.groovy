@@ -3,7 +3,9 @@ pipeline {
 
     environment {
         GITHUB_REPO = 'vvkgdm/ProjectX'
+        GITHUB_HELM_REPO = 'vvkgdm/ProjectXHelm'
         BRANCH_NAME = 'dit'
+        HELM_BRANCH_NAME = 'main'
         NEXUS_REPO = 'http://54.92.241.126:8081/repository/docker-repo'
         NEXUS_URL = 'http://54.92.241.126:8081/'
         SONAR_URL = 'http://54.92.241.126:9000/'
@@ -120,9 +122,9 @@ pipeline {
                         services.each { service ->
                             dir(service) {
                                 sh """
-                                    git clone https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/${GITHUB_REPO}.git
-                                    cd ${GITHUB_REPO}
-                                    sed -i 's/tag:.*/tag: ${DATE_TAG}/g' values-${BRANCH_NAME}.yaml
+                                    git clone https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/${GITHUB_HELM_REPO}.git
+                                    cd ${GITHUB_HELM_REPO}
+                                    sed -i 's/tag:.*/tag: ${DATE_TAG}/g' values-${HELM_BRANCH_NAME}.yaml
                                     git commit -am 'Update image tag to ${DATE_TAG}'
                                     git push
                                 """
