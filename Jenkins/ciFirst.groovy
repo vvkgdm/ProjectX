@@ -147,13 +147,13 @@ pipeline {
         }
     }
 
+
     post {
         always {
-            agent { 
-            docker { image 'alpine' }
-            cleanWs()
-        } 
-         
+            script {
+                docker.image('alpine').inside {
+                    cleanWs()
+                }
             }
         }
     }
