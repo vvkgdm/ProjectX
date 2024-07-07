@@ -29,11 +29,15 @@ pipeline {
         stage('Identify Changed Services') {
             steps {
                 script {
+                    // Add debugging for changed files
                     def changedFiles = sh(script: 'git diff-tree --no-commit-id --name-only -r HEAD', returnStdout: true).trim().split('\n')
+                    echo "Changed files: ${changedFiles}"
                     def services = ['frontend', 'cartservice', 'productcatalogservice', 'currencyservice', 'paymentservice', 'shippingservice', 'emailservice', 'checkoutservice', 'recommendationservice', 'adservice', 'loadgenerator', 'shoppingassistantservice']
-                    env.CHANGED_SERVICES = services.findAll { service -> 
+                    def relevantServices = services.findAll { service -> 
                         changedFiles.any { it.contains(service) }
-                    }.join(',')
+                    }
+                    echo "Relevant services: ${relevantServices}"
+                    env.CHANGED_SERVICES = relevantServices.join(',')
                     if (env.CHANGED_SERVICES.isEmpty()) {
                         error("No relevant services changed.")
                     }
@@ -43,7 +47,7 @@ pipeline {
 
         stage('Trivy Scan') {
             when {
-                expression { env.CHANGED_SERVICES != null }
+                expression { env.CHANGED_SERVICES != null && env.CHANGED_SERVICES != '' }
             }
             steps {
                 script {
@@ -61,7 +65,7 @@ pipeline {
 
         stage('Sonar Scan') {
             when {
-                expression { env.CHANGED_SERVICES != null }
+                expression { env.CHANGED_SERVICES != null && env.CHANGED_SERVICES != '' }
             }
             steps {
                 script {
@@ -84,7 +88,7 @@ pipeline {
 
         stage('Build and Push Docker Images') {
             when {
-                expression { env.CHANGED_SERVICES != null }
+                expression { env.CHANGED_SERVICES != null && env.CHANGED_SERVICES != '' }
             }
             steps {
                 script {
@@ -110,7 +114,7 @@ pipeline {
 
         stage('Update Helm Values') {
             when {
-                expression { env.CHANGED_SERVICES != null }
+                expression { env.CHANGED_SERVICES != null && env.CHANGED_SERVICES != '' }
             }
             steps {
                 withCredentials([usernamePassword(credentialsId: 'githubID', usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_PASSWORD')]) {
