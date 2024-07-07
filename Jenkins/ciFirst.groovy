@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         GITHUB_REPO = 'vvkgdm/ProjectX'
-        GITHUB_HELM_REPO = 'vvkgdm/ProjectXHelm'
+        GITHUB_HELM_REPO = 'ProjectXHelm'
         BRANCH_NAME = 'dit'
         HELM_BRANCH_NAME = 'main'
         NEXUS_REPO = '54.89.16.64:8082/repository/docker-private'
