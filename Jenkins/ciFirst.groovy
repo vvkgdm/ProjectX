@@ -17,7 +17,12 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git url: "https://github.com/${GITHUB_REPO}", branch: "${BRANCH_NAME}", credentialsId: "${GIT_CREDS}"
+                script {
+                    checkout([$class: 'GitSCM',
+                              branches: [[name: "*/${BRANCH_NAME}"]],
+                              userRemoteConfigs: [[url: "https://github.com/${GITHUB_REPO}", credentialsId: "${GIT_CREDS}"]],
+                              extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: 'ProjectX']]])
+                }
             }
         }
 
@@ -36,7 +41,7 @@ pipeline {
             }
         }
 
-           stage('Trivy Scan') {
+        stage('Trivy Scan') {
             when {
                 expression { env.CHANGED_SERVICES != null }
             }
@@ -44,7 +49,7 @@ pipeline {
                 script {
                     def services = env.CHANGED_SERVICES.split(',')
                     services.each { service ->
-                        dir(service) {
+                        dir("ProjectX/SourceCode/${service}") {
                             sh '''
                                 docker run --rm -v $(pwd):/workspace -w /workspace aquasec/trivy:latest fs --format table -o trivy-fs-report.html .
                             '''
@@ -62,7 +67,7 @@ pipeline {
                 script {
                     def services = env.CHANGED_SERVICES.split(',')
                     services.each { service ->
-                        dir(service) {
+                        dir("ProjectX/SourceCode/${service}") {
                             withSonarQubeEnv('sonar') {
                                 sh """
                                     ${SCANNER_HOME}/bin/sonar-scanner \
@@ -77,53 +82,31 @@ pipeline {
             }
         }
 
-stage('Build and Push Docker Images') {
-    when {
-        expression { env.CHANGED_SERVICES != null }
-    }
-    steps {
-        script {
-            echo "CHANGED_SERVICES: ${env.CHANGED_SERVICES}"
-            def services = env.CHANGED_SERVICES.split(',')
-            dir('ProjectX/SourceCode') {
-                services.each { service ->
-                    echo "Processing service: ${service}"
-                    dir(service) {
-                        echo "Current directory: ${pwd()}"
-                        sh 'ls -la'
-                        if (fileExists('Dockerfile')) {
-                            echo "Building and pushing Docker image for ${service}"
-                            sh "docker build -t ${NEXUS_REPO}/${service}:${DATE_TAG} ."
-                            sh "docker push ${NEXUS_REPO}/${service}:${DATE_TAG}"
-                        } else {
-                            echo "No Dockerfile found in ${service}, skipping."
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-
-        
-
-        
-        
-        /*stage('Inline Scanning') {
+        stage('Build and Push Docker Images') {
             when {
                 expression { env.CHANGED_SERVICES != null }
             }
             steps {
                 script {
+                    echo "CHANGED_SERVICES: ${env.CHANGED_SERVICES}"
                     def services = env.CHANGED_SERVICES.split(',')
                     services.each { service ->
-                        sh "sysdig-inline-scan --docker-image ${NEXUS_REPO}/${service}:${DATE_TAG}"
-                        sh "trivy image ${NEXUS_REPO}/${service}:${DATE_TAG}"
+                        echo "Processing service: ${service}"
+                        dir("ProjectX/SourceCode/${service}") {
+                            echo "Current directory: ${pwd()}"
+                            sh 'ls -la'
+                            if (fileExists('Dockerfile')) {
+                                echo "Building and pushing Docker image for ${service}"
+                                sh "docker build -t ${NEXUS_REPO}/${service}:${DATE_TAG} ."
+                                sh "docker push ${NEXUS_REPO}/${service}:${DATE_TAG}"
+                            } else {
+                                echo "No Dockerfile found in ${service}, skipping."
+                            }
+                        }
                     }
                 }
             }
-        } */
+        }
 
         stage('Update Helm Values') {
             when {
@@ -134,7 +117,7 @@ stage('Build and Push Docker Images') {
                     script {
                         def services = env.CHANGED_SERVICES.split(',')
                         services.each { service ->
-                            dir(service) {
+                            dir("ProjectX/SourceCode/${service}") {
                                 sh """
                                     git clone https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/${GITHUB_HELM_REPO}.git
                                     cd ${GITHUB_HELM_REPO}
