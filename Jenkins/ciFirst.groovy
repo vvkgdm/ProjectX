@@ -6,9 +6,9 @@ pipeline {
         GITHUB_HELM_REPO = 'vvkgdm/ProjectXHelm'
         BRANCH_NAME = 'dit'
         HELM_BRANCH_NAME = 'main'
-        NEXUS_REPO = 'http://54.92.241.126:8081/repository/docker-private'
-        NEXUS_URL = 'http://54.92.241.126:8081/'
-        SONAR_URL = 'http://54.92.241.126:9000/'
+        NEXUS_REPO = 'http://54.89.16.64:8081/repository/docker-private'
+        NEXUS_URL = 'http://54.89.16.64:8081/'
+        SONAR_URL = 'http://54.89.16.64:9000/'
         DATE_TAG = "${new Date().format('yyyyMMddHHmmss')}"
         GIT_CREDS = credentials('githubID')
         SCANNER_HOME = tool 'sonar-scanner'
