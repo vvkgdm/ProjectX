@@ -46,24 +46,42 @@ pipeline {
             }
             steps {
                 script {
-                    
-                                sh "trivy fs --format table -o trivy-fs-report.html ."
+                    def services = env.CHANGED_SERVICES.split(',')
+                    services.each { service ->
+                        def dockerImage = getDockerImageForService(service)
+                        docker.image(dockerImage).inside {
+                            dir(service) {
+                                sh 'trivy fs --format table -o trivy-fs-report.html .'
                             }
                         }
                     }
-         stage('Sonar Scan') {
+                }
+            }
+        }
+
+        stage('Sonar Scan') {
             when {
                 expression { env.CHANGED_SERVICES != null }
             }
             steps {
-                withSonarQubeEnv('sonar') {
-    sh ''' $SCANNER_HOME/bin/sonar-scanner -Dsonar.projectKey=$service -Dsonar.projectName=$service '''
-    
-}
+                script {
+                    def services = env.CHANGED_SERVICES.split(',')
+                    services.each { service ->
+                        def dockerImage = getDockerImageForService(service)
+                        docker.image(dockerImage).inside {
+                            dir(service) {
+                                withSonarQubeEnv('sonar') {
+                                    sh """
+                                        ${SCANNER_HOME}/bin/sonar-scanner -Dsonar.projectKey=${service} -Dsonar.projectName=${service}
+                                    """
+                                }
+                            }
                         }
                     }
+                }
+            }
+        }
 
-        
         stage('Build and Push Docker Images') {
             when {
                 expression { env.CHANGED_SERVICES != null }
