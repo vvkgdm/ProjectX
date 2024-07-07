@@ -125,7 +125,8 @@ pipeline {
 
     post {
         always {
-            node { // Removed label to allow any available node
+            agent any
+            steps {
                 cleanWs()
             }
         }
