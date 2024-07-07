@@ -157,7 +157,7 @@ pipeline {
             }
         }
     }
-
+}
 def getDockerImageForService(service) {
     switch (service) {
         case 'frontend':
