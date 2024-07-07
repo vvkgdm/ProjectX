@@ -9,7 +9,7 @@ pipeline {
         SONAR_URL = 'http://54.92.241.126:9000/'
         DATE_TAG = "${new Date().format('yyyyMMddHHmmss')}"
         DOCKER_CREDS = credentials('docker-credentials-id')
-        GIT_CREDS = credentials('git-credentials-id')
+        GIT_CREDS = credentials('githubID')
         SCANNER_HOME = tool 'sonar-scanner'
     }
 
