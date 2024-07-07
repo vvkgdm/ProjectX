@@ -9,7 +9,7 @@ pipeline {
         DATE_TAG = "${new Date().format('yyyyMMddHHmmss')}"
         DOCKER_CREDS = credentials('docker-credentials-id')
         GIT_CREDS = credentials('git-credentials-id')
-        SONAR_SCANNER = 'SonarQubeScanner'
+        SCANNER_HOME = tool 'sonar-scanner'
     }
 
     stages {
@@ -40,28 +40,30 @@ pipeline {
             }
         }
 
-        stage('Vulnerability Scan') {
+        stage('Trivy Scan') {
             when {
                 expression { env.CHANGED_SERVICES != null }
             }
             steps {
                 script {
-                    def services = env.CHANGED_SERVICES.split(',')
-                    services.each { service ->
-                        def dockerImage = getDockerImageForService(service)
-                        docker.image(dockerImage).inside {
-                            dir(service) {
-                                withSonarQubeEnv('SonarQube') {
-                                    sh "${SONAR_SCANNER} -Dsonar.projectKey=${env.JOB_NAME}-${service} -Dsonar.sources=."
-                                }
+                    
                                 sh "trivy fs --format table -o trivy-fs-report.html ."
                             }
                         }
                     }
-                }
+         stage('Sonar Scan') {
+            when {
+                expression { env.CHANGED_SERVICES != null }
             }
-        }
+            steps {
+                script {
+                    
+                                sh "trivy fs --format table -o trivy-fs-report.html ."
+                            }
+                        }
+                    }
 
+        
         stage('Build and Push Docker Images') {
             when {
                 expression { env.CHANGED_SERVICES != null }
