@@ -18,29 +18,29 @@ pipeline {
         SCANNER_HOME = tool 'sonar-scanner'
     }
 
-    stages {
+        stages {
         stage('Checkout') {
-            agent {
-                docker { image 'alpine/git' }
-            }
             steps {
-                git url: "https://github.com/${GITHUB_REPO}", branch: "${BRANCH_NAME}", credentialsId: "${GIT_CREDS}"
+                script {
+                    docker.image('alpine/git').inside {
+                        git url: "https://github.com/${GITHUB_REPO}", branch: "${BRANCH_NAME}", credentialsId: "${GIT_CREDS}"
+                    }
+                }
             }
         }
 
         stage('Identify Changed Services') {
-            agent {
-                docker { image 'alpine' }
-            }
             steps {
                 script {
-                    def changedFiles = sh(script: 'git diff-tree --no-commit-id --name-only -r HEAD', returnStdout: true).trim().split('\n')
-                    def services = ['frontend', 'cartservice', 'productcatalogservice', 'currencyservice', 'paymentservice', 'shippingservice', 'emailservice', 'checkoutservice', 'recommendationservice', 'adservice', 'loadgenerator', 'shoppingassistantservice']
-                    env.CHANGED_SERVICES = services.findAll { service -> 
-                        changedFiles.any { it.contains(service) }
-                    }.join(',')
-                    if (env.CHANGED_SERVICES.isEmpty()) {
-                        error("No relevant services changed.")
+                    docker.image('alpine').inside {
+                        def changedFiles = sh(script: 'git diff-tree --no-commit-id --name-only -r HEAD', returnStdout: true).trim().split('\n')
+                        def services = ['frontend', 'cartservice', 'productcatalogservice', 'currencyservice', 'paymentservice', 'shippingservice', 'emailservice', 'checkoutservice', 'recommendationservice', 'adservice', 'loadgenerator', 'shoppingassistantservice']
+                        env.CHANGED_SERVICES = services.findAll { service -> 
+                            changedFiles.any { it.contains(service) }
+                        }.join(',')
+                        if (env.CHANGED_SERVICES.isEmpty()) {
+                            error("No relevant services changed.")
+                        }
                     }
                 }
             }
@@ -120,8 +120,10 @@ pipeline {
                 script {
                     def services = env.CHANGED_SERVICES.split(',')
                     services.each { service ->
-                        sh "sysdig-inline-scan --docker-image ${NEXUS_REPO}/${service}:${DATE_TAG}"
-                        sh "trivy image ${NEXUS_REPO}/${service}:${DATE_TAG}"
+                        docker.image('alpine').inside {
+                            sh "sysdig-inline-scan --docker-image ${NEXUS_REPO}/${service}:${DATE_TAG}"
+                            sh "trivy image ${NEXUS_REPO}/${service}:${DATE_TAG}"
+                        }
                     }
                 }
             }
@@ -136,14 +138,16 @@ pipeline {
                     script {
                         def services = env.CHANGED_SERVICES.split(',')
                         services.each { service ->
-                            dir(service) {
-                                sh """
-                                    git clone https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/${GITHUB_REPO}.git
-                                    cd ${GITHUB_REPO}
-                                    sed -i 's/tag:.*/tag: ${DATE_TAG}/g' values-${BRANCH_NAME}.yaml
-                                    git commit -am 'Update image tag to ${DATE_TAG}'
-                                    git push
-                                """
+                            docker.image('alpine/git').inside {
+                                dir(service) {
+                                    sh """
+                                        git clone https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/${GITHUB_REPO}.git
+                                        cd ${GITHUB_REPO}
+                                        sed -i 's/tag:.*/tag: ${DATE_TAG}/g' values-${BRANCH_NAME}.yaml
+                                        git commit -am 'Update image tag to ${DATE_TAG}'
+                                        git push
+                                    """
+                                }
                             }
                         }
                     }
@@ -151,7 +155,6 @@ pipeline {
             }
         }
     }
-
 
     post {
         always {
