@@ -131,7 +131,7 @@ pipeline {
                     script {
                         def services = env.CHANGED_SERVICES.split(',')
                         services.each { service ->
-                            dir("ProjectX/SourceCode/${service}") {
+                            dir("ProjectXHelm/${service}") {
                                 sh """
                                     git clone https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/vvkgdm/${GITHUB_HELM_REPO}.git
                                     cd ${GITHUB_HELM_REPO}
