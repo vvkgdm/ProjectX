@@ -45,9 +45,9 @@ pipeline {
                     def services = env.CHANGED_SERVICES.split(',')
                     services.each { service ->
                         dir(service) {
-                            sh """
+                            sh '''
                                 docker run --rm -v $(pwd):/workspace -w /workspace aquasec/trivy:latest fs --format table -o trivy-fs-report.html .
-                            """
+                            '''
                         }
                     }
                 }
@@ -64,12 +64,12 @@ pipeline {
                     services.each { service ->
                         dir(service) {
                             withSonarQubeEnv('sonar') {
-                                sh """
+                                sh '''
                                     ${SCANNER_HOME}/bin/sonar-scanner \
                                     -Dsonar.host.url=${SONAR_URL} \
                                     -Dsonar.projectKey=${service} \
                                     -Dsonar.projectName=${service}
-                                """
+                                '''
                             }
                         }
                     }
