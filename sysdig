@@ -1,0 +1,53 @@
+Quarter 1: Essential Dashboard & Foundational Alerting
+Focus: Building a core monitoring dashboard and setting up basic, high-priority alerts.
+
+Sprint 1 (Weeks 1-2): Core Health Dashboard Creation
+
+Story Title: Create Consolidated Kubernetes & Pod Health Dashboard
+
+Description:
+As a DevOps Engineer, I want a single, consolidated Sysdig dashboard that provides a quick overview of the health status of our Kubernetes pods and related critical objects across all clusters (Prod & Dev).
+Acceptance Criteria:
+Dashboard created in Sysdig named "Microservice Cluster Health Overview."
+Dashboard includes widgets for:
+Pod Status: Showing counts of Running, Pending, Failed, CrashLoopBackOff pods, filterable by cluster/namespace.
+Top 5 CPU Consuming Pods/Microservices: Displaying current CPU usage.
+Top 5 Memory Consuming Pods/Microservices: Displaying current Memory usage.
+PVC Status: Summary of Bound, Pending, Lost PVCs.
+The dashboard should be accessible to the entire DevOps team.
+Effort Estimate: Medium
+Story Title: Configure Basic Pod Health Alerts
+
+Description:
+As a DevOps Engineer, I want to be alerted when our microservice pods encounter critical health issues like crashing or failing to start.
+Acceptance Criteria:
+Sysdig alerts configured for:
+Pod CrashLoopBackOff: Triggered when a pod enters this state.
+Pod Failed: Triggered when a pod enters a failed state.
+Alerts routed to a designated team communication channel (e.g., Slack channel or email group).
+Alerts should clearly identify the affected cluster, namespace, and pod name.
+Effort Estimate: Medium
+Sprint 2 (Weeks 3-4): Resource & PVC Alerting Model
+
+Story Title: Implement Pod Resource Usage Alerts
+
+Description:
+As a DevOps Engineer, I want to be alerted when our microservice pods are critically over-utilizing CPU or memory, indicating potential performance bottlenecks or OOMKills.
+Acceptance Criteria:
+Sysdig alerts configured for:
+High Pod CPU Usage: Triggered when a pod's CPU usage exceeds a defined threshold (e.g., 90% of requests/limits) for a sustained period (e.g., 5 minutes).
+High Pod Memory Usage: Triggered when a pod's memory usage exceeds a defined threshold (e.g., 95% of requests/limits) for a sustained period.
+Alerts are scoped to relevant microservice namespaces or globally.
+Notifications include affected pod details and resource type.
+Effort Estimate: Medium
+Story Title: Configure Critical PVC Status Alerts
+
+Description:
+As a DevOps Engineer, I want to be alerted when our PersistentVolumeClaims (PVCs) encounter issues that prevent them from binding or indicate data loss.
+Acceptance Criteria:
+Sysdig alerts configured for:
+PVC Pending: Triggered if a PVC remains in a "Pending" state for longer than a defined threshold (e.g., 10 minutes).
+PVC Lost/Unbound: Triggered if a PVC enters a "Lost" or "Unbound" state (if detectable by Sysdig).
+Alerts include details about the affected PVC, namespace, and cluster.
+Notifications sent to the designated team channel.
+Effort Estimate: Medium
