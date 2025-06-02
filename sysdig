@@ -1,3 +1,5 @@
+
+
 Quarter 1: Essential Dashboard & Foundational Alerting
 Focus: Building a core monitoring dashboard and setting up basic, high-priority alerts.
 
@@ -51,3 +53,11 @@ PVC Lost/Unbound: Triggered if a PVC enters a "Lost" or "Unbound" state (if dete
 Alerts include details about the affected PVC, namespace, and cluster.
 Notifications sent to the designated team channel.
 Effort Estimate: Medium
+
+
+
+
+https://kubernetes.io/docs
+https://kubernetes.io/blog
+https://helm.sh/docs
+https://gateway-api.sigs.k8s.io
