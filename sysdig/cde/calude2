@@ -1,0 +1,37 @@
+I've created a comprehensive PromQL monitoring solution for your ADO pipeline agents managed by KEDA. Here are the key components:
+Primary Alert Query:
+The main query monitors when you have more than 35 ADO agent pods running longer than 20 minutes:
+promqlcount(
+  (time() - sysdig_kubernetes_pod_start_time{
+    kubernetes_cluster_name="cluster1",
+    kubernetes_namespace_name="namespace1",
+    kubernetes_pod_name=~"agent11.*"
+  }) > 1200
+) > 35
+Key Features:
+
+Capacity Monitoring: Tracks when you're approaching your 40-pod limit
+Long-Running Detection: Identifies pipelines that might be stuck
+Resource Optimization: Helps identify inefficient pipeline configurations
+KEDA Integration: Works with KEDA-managed scaling
+
+Multiple Alert Levels:
+
+High: >35 pods running >20 minutes
+Medium: >5 pods running >30 minutes (stuck jobs)
+Warning: >30 pods running >15 minutes
+
+Customization Points:
+
+Agent Name Pattern: Change agent11.* to match your naming convention
+Time Thresholds: Adjust the 1200 seconds (20 minutes) as needed
+Count Thresholds: Modify the 35-pod limit based on your requirements
+Cluster/Namespace: Update to match your actual values
+
+Additional Benefits:
+
+Resource Utilization: Monitor CPU/memory usage of agent pods
+Node Distribution: Track how agents are spread across nodes
+Pipeline Duration: Monitor average pipeline execution times
+
+Would you like me to help you customize any specific thresholds or add additional monitoring for other aspects of your ADO pipeline infrastructure?RetryClaude does not have the ability to run the code it generates yet.Claude can make mistakes. Please double-check responses. Sonnet 4

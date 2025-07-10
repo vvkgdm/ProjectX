@@ -1,0 +1,60 @@
+# This query identifies ADO agent pods that are running for more than 20 minutes
+# and alerts if more than 35 such pods are running in parallel.
+
+sum(
+    # Selects pods that are currently in the 'Running' phase.
+    kube_pod_status_phase{
+        phase="Running",
+        pod=~"agent11.*",       # Pod names starting with 'agent11'
+        cluster="cluster1",     # In 'cluster1'
+        namespace="namespace1"  # In 'namespace1'
+    } == 1
+    and
+    # Filters these running pods to include only those that have been running
+    # for more than 20 minutes (20 * 60 seconds).
+    (
+        time() - kube_pod_start_time{
+            pod=~"agent11.*",
+            cluster="cluster1",
+            namespace="namespace1"
+        }
+    ) > (20 * 60)
+)
+# The alert triggers if the total count of such pods exceeds 35.
+> 35
+
+Explanation of the Query:
+
+kube_pod_status_phase{...} == 1: This part selects all pods that are currently in the "Running" phase.
+
+pod=~"agent11.*": Filters for pods whose names begin with "agent11".
+
+cluster="cluster1": Specifies the exact cluster name.
+
+namespace="namespace1": Specifies the exact namespace name.
+
+and: This logical operator combines the two conditions. A metric series will only be included if both the pod is running and the duration condition is met.
+
+(time() - kube_pod_start_time{...}) > (20 * 60):
+
+kube_pod_start_time: Provides the Unix timestamp when each pod started.
+
+time(): Returns the current Unix timestamp.
+
+time() - kube_pod_start_time: Calculates the duration (in seconds) that each pod has been running.
+
+> (20 * 60): Filters for pods that have been running for more than 20 minutes (1200 seconds).
+
+sum(...): This aggregates the results. For every pod that meets both the "running" and "duration" criteria, it contributes 1 to the sum.
+
+> 35: This is the final alert threshold. The alert will fire if the total count of ADO agent pods that have been running for over 20 minutes simultaneously exceeds 35.
+
+Sysdig Alert Configuration Notes for this Query:
+
+Threshold: > 35
+
+Duration (for clause): You can set a short for duration (e.g., 1m or 2m) in your Sysdig alert rule. This will ensure the condition is stable for a brief period before triggering the alert, although the time() - kube_pod_start_time part already acts as a duration filter for individual pods.
+
+Severity: Choose an appropriate severity (e.g., High or Critical) as this indicates a potential bottleneck or issue with your ADO agent scaling.
+
+Notification Channels: Ensure your Sysdig alert rule is configured to send notifications to your desired Mail and Teams channels.
