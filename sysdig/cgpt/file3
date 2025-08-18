@@ -1,0 +1,74 @@
+1. Pod RAM usage > 88% for 10 minutes
+promql
+Copy
+Edit
+avg by (cluster, namespace, pod) (
+  rate(container_memory_working_set_bytes{container!=""}[5m])
+  /
+  kube_pod_container_resource_limits_memory_bytes{container!=""}
+) * 100 > 88
+🔹 Explanation:
+
+container_memory_working_set_bytes = actual memory used.
+
+Divided by kube_pod_container_resource_limits_memory_bytes = pod memory limit.
+
+avg by (cluster, namespace, pod) → groups usage per pod.
+
+Condition > 88 → usage above threshold.
+
+Set for: 10m in the alert rule to require sustained condition.
+
+2. Pod CPU usage > 88% for 10 minutes
+promql
+Copy
+Edit
+avg by (cluster, namespace, pod) (
+  rate(container_cpu_usage_seconds_total{container!=""}[5m])
+  /
+  kube_pod_container_resource_limits_cpu_cores{container!=""}
+) * 100 > 88
+🔹 Explanation:
+
+container_cpu_usage_seconds_total = CPU used by the pod.
+
+Divided by kube_pod_container_resource_limits_cpu_cores = pod CPU limit.
+
+Multiply by 100 for percentage.
+
+Use for: 10m in alert config.
+
+3. KEDA batch jobs > 15 and running more than 30 min
+promql
+Copy
+Edit
+count by (cluster, namespace) (
+  kube_job_status_start_time{job=~".*keda.*"}
+    and
+  kube_job_status_active > 0
+  and
+  (time() - kube_job_status_start_time) > 1800
+) > 15
+🔹 Explanation:
+
+kube_job_status_start_time = when job started.
+
+(time() - kube_job_status_start_time) > 1800 → running > 30 mins.
+
+kube_job_status_active > 0 → job is still active (not finished).
+
+Count jobs and trigger alert if more than 15.
+
+4. PVC not bound / pending / waiting
+promql
+Copy
+Edit
+kube_persistentvolumeclaim_status_phase{phase=~"Pending|Lost|Failed"} > 0
+🔹 Explanation:
+
+kube_persistentvolumeclaim_status_phase tracks PVC state.
+
+Filter for "Pending|Lost|Failed".
+
+If any count > 0 → alert.
+
