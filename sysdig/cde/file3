@@ -1,0 +1,117 @@
+# Sysdig PromQL Alert Queries
+
+## 1. Pod Memory Usage > 88% for > 10 minutes
+
+```promql
+(
+  (container_memory_working_set_bytes{cluster_name=~"cluster1|cluster2", namespace=~"ns1|ns2|ns3|ns4|ns5", container!="POD", container!=""} / 
+   container_spec_memory_limit_bytes{cluster_name=~"cluster1|cluster2", namespace=~"ns1|ns2|ns3|ns4|ns5", container!="POD", container!=""}) * 100 > 88
+)
+```
+
+**Alert Configuration:**
+- **For:** `10m`
+- **Severity:** `warning` or `critical`
+- **Summary:** `Pod {{ $labels.pod }} in namespace {{ $labels.namespace }} on cluster {{ $labels.cluster_name }} has memory usage above 88%`
+
+---
+
+## 2. Pod CPU Usage > 88% for > 10 minutes
+
+```promql
+(
+  (rate(container_cpu_usage_seconds_total{cluster_name=~"cluster1|cluster2", namespace=~"ns1|ns2|ns3|ns4|ns5", container!="POD", container!=""}[5m]) / 
+   container_spec_cpu_quota{cluster_name=~"cluster1|cluster2", namespace=~"ns1|ns2|ns3|ns4|ns5", container!="POD", container!=""} * 
+   container_spec_cpu_period{cluster_name=~"cluster1|cluster2", namespace=~"ns1|ns2|ns3|ns4|ns5", container!="POD", container!=""}) * 100 > 88
+)
+```
+
+**Alternative CPU Query (if the above doesn't work with your metrics):**
+```promql
+(
+  avg_over_time(
+    (rate(container_cpu_usage_seconds_total{cluster_name=~"cluster1|cluster2", namespace=~"ns1|ns2|ns3|ns4|ns5", container!="POD", container!=""}[1m]) * 100)[10m:]
+  ) > 88
+)
+```
+
+**Alert Configuration:**
+- **For:** `10m`
+- **Severity:** `warning` or `critical`
+- **Summary:** `Pod {{ $labels.pod }} in namespace {{ $labels.namespace }} on cluster {{ $labels.cluster_name }} has CPU usage above 88%`
+
+---
+
+## 3. KEDA Batch Jobs Running > 30 minutes (>= 15 jobs)
+
+```promql
+(
+  count by (cluster_name, namespace) (
+    kube_job_status_active{cluster_name=~"cluster1|cluster2", namespace=~"ns1|ns2|ns3|ns4|ns5", job_name=~".*keda.*"} == 1 and
+    (time() - kube_job_status_start_time{cluster_name=~"cluster1|cluster2", namespace=~"ns1|ns2|ns3|ns4|ns5", job_name=~".*keda.*"}) > 1800
+  ) >= 15
+)
+```
+
+**Alternative Query (if job naming pattern is different):**
+```promql
+(
+  count by (cluster_name, namespace) (
+    kube_job_status_active{cluster_name=~"cluster1|cluster2", namespace=~"ns1|ns2|ns3|ns4|ns5"} == 1 and
+    kube_job_labels{cluster_name=~"cluster1|cluster2", namespace=~"ns1|ns2|ns3|ns4|ns5", label_scaledobject!=""} and
+    (time() - kube_job_status_start_time{cluster_name=~"cluster1|cluster2", namespace=~"ns1|ns2|ns3|ns4|ns5"}) > 1800
+  ) >= 15
+)
+```
+
+**Alert Configuration:**
+- **For:** `0m` (immediate alert)
+- **Severity:** `warning`
+- **Summary:** `{{ $value }} KEDA batch jobs have been running for more than 30 minutes in namespace {{ $labels.namespace }} on cluster {{ $labels.cluster_name }}`
+
+---
+
+## 4. PVC Not Bound/Pending/Waiting State
+
+```promql
+(
+  kube_persistentvolumeclaim_status_phase{cluster_name=~"cluster1|cluster2", namespace=~"ns1|ns2|ns3|ns4|ns5", phase!="Bound"} == 1
+)
+```
+
+**More Specific Query for Different States:**
+```promql
+(
+  kube_persistentvolumeclaim_status_phase{cluster_name=~"cluster1|cluster2", namespace=~"ns1|ns2|ns3|ns4|ns5", phase=~"Pending|Lost"} == 1
+)
+```
+
+**Alert Configuration:**
+- **For:** `2m`
+- **Severity:** `critical`
+- **Summary:** `PVC {{ $labels.persistentvolumeclaim }} in namespace {{ $labels.namespace }} on cluster {{ $labels.cluster_name }} is in {{ $labels.phase }} state`
+
+---
+
+## Additional Notes:
+
+### Metric Availability
+- Ensure these metrics are available in your Sysdig environment
+- Some metric names might vary based on your Sysdig configuration
+- Test queries in Sysdig's query interface before creating alerts
+
+### Label Adjustments
+- Replace `cluster_name` with your actual cluster label (might be `cluster`, `cluster_id`, etc.)
+- Adjust namespace names (`ns1`, `ns2`, etc.) to match your actual namespaces
+- For KEDA jobs, you might need to adjust the job name pattern or use different labels
+
+### Thresholds
+- Memory/CPU: 88% threshold as requested
+- KEDA jobs: 15 jobs running for >30 minutes (1800 seconds)
+- All queries are scoped to your specified clusters and namespaces
+
+### Testing Recommendations
+1. Test each query individually in Sysdig's explore/query interface
+2. Verify the metric names match your environment
+3. Adjust label selectors based on your actual cluster and namespace labels
+4. Fine-tune the time ranges and thresholds based on your requirements
