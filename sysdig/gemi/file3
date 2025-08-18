@@ -1,0 +1,10 @@
+(sum(container_memory_usage_bytes{namespace=~"ns[1-5]|ns[1-5]", cluster=~"cluster1|cluster2"}) by (pod, namespace, cluster) / sum(kube_pod_container_resource_limits_memory_bytes{namespace=~"ns[1-5]|ns[1-5]", cluster=~"cluster1|cluster2"}) by (pod, namespace, cluster)) * 100 > 88
+
+
+(sum(rate(container_cpu_usage_seconds_total{namespace=~"ns[1-5]|ns[1-5]", cluster=~"cluster1|cluster2"}[5m])) by (pod, namespace, cluster) / sum(kube_pod_container_resource_limits_cpu_cores{namespace=~"ns[1-5]|ns[1-5]", cluster=~"cluster1|cluster2"}) by (pod, namespace, cluster)) * 100 > 88
+
+
+count(kube_job_status_active{namespace=~"ns[1-5]|ns[1-5]", cluster=~"cluster1|cluster2", job_name=~"keda-batch-job-.*"} == 1 and (time() - kube_job_created{namespace=~"ns[1-5]|ns[1-5]", cluster=~"cluster1|cluster2", job_name=~"keda-batch-job-.*"}) > 30*60) >= 15
+
+
+kube_persistentvolumeclaim_status_phase{phase=~"Pending|Lost", namespace=~"ns[1-5]|ns[1-5]", cluster=~"cluster1|cluster2"} == 1
