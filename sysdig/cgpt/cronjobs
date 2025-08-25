@@ -1,0 +1,58 @@
+First check how many cronjobs are there in the our radar and try to check the alerts based on this.
+
+🔹 1. Alert if a CronJob fails
+CronJobs create Jobs, so you need to monitor the job success/failure.
+
+promql
+Copy
+Edit
+kube_job_status_failed{job=~".*"} > 0
+Fires when any job created by a CronJob has a failed pod.
+
+You can add labels (like namespace="ns1") to scope it.
+
+🔹 2. Alert if CronJob didn’t start at expected schedule
+Prometheus exposes the last scheduled time via kube_cronjob_next_schedule_time and kube_cronjob_status_last_schedule_time.
+
+You can check if the CronJob hasn’t been triggered within its expected interval:
+
+promql
+Copy
+Edit
+(time() - kube_cronjob_status_last_schedule_time) 
+> kube_cronjob_spec_schedule
+Detects when the job hasn’t run since its last expected schedule.
+
+Useful if your CronJob is stuck or not firing at all.
+
+🔹 3. Alert if CronJob is stuck in “Active” state too long
+Sometimes a CronJob spawns a Job that never finishes.
+
+promql
+Copy
+Edit
+kube_cronjob_status_active > 0
+and (time() - kube_cronjob_status_last_schedule_time) > 1800
+Means the CronJob has been running longer than 30 min.
+
+Good for hanging cronjob pods.
+
+🔹 4. Alert if too many CronJob pods are running
+If you want to limit concurrent executions (to avoid overload):
+
+promql
+Copy
+Edit
+count by (namespace, cronjob) (
+  kube_cronjob_status_active > 0
+) > 3
+Alerts if more than 3 active CronJob runs are happening simultaneously.
+
+✅ Best practice in Sysdig:
+
+Tie CronJob alerts to their Job metrics (since those reflect actual execution).
+
+Use duration checks (time() - last_schedule_time) for "didn’t run" or "stuck running".
+
+Add namespace/cluster labels to scope (since you have multiple clusters).
+
